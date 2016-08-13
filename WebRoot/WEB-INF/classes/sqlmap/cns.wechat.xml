@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap     
+
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"     
+
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="cns.wechat">
+	<insert id="regUser" parameterClass="map">
+		INSERT IGNORE INTO cns_usr
+			(open_id,whichQr) 
+		VALUE 
+			(#openId#,#whichQr#)
+	</insert>
+	<insert id="activeVipCard" parameterClass="map">
+		INSERT INTO cns_usr
+			(open_id,card_id,vip_code) 
+		VALUE
+			(#FromUserName#,#CardId#,#UserCardCode#) 
+		ON DUPLICATE KEY UPDATE card_id=#CardId#, vip_code=#UserCardCode#
+	</insert>
+	<insert id="recordEventLog" parameterClass="map">
+		INSERT INTO cns_event
+			(open_id,event_type,json_content)
+		value
+			(#FromUserName#,#Event#,#jsonContent#)
+	</insert>
+	<insert id="recordOrder" parameterClass="map">
+		INSERT INTO cns_order
+			(
+			order_id,
+			order_status,
+			order_total_price,
+			order_create_time,
+			order_express_price,
+			buyer_openid,
+			buyer_nick,
+			receiver_name,
+			receiver_province,
+			receiver_city,
+			receiver_address,
+			receiver_mobile,
+			receiver_phone,
+			product_id,
+			product_name,
+			product_price,
+			product_count,
+			trans_id,
+			receiver_zone,
+			receiver_zip
+			)
+		value
+			(
+			#order_id#,
+			#order_status#,
+			#order_total_price#,
+			#order_create_time#,
+			#order_express_price#,
+			#buyer_openid#,
+			#buyer_nick#,
+			#receiver_name#,
+			#receiver_province#,
+			#receiver_city#,
+			#receiver_address#,
+			#receiver_mobile#,
+			#receiver_phone#,
+			#product_id#,
+			#product_name#,
+			#product_price#,
+			#product_count#,
+			#trans_id#,
+			#receiver_zone#,
+			#receiver_zip#
+			)
+	</insert>
+	<select id="getVipCodeByOpenId" parameterClass="string" resultClass="string">
+		SELECT vip_code FROM cns_usr
+		WHERE open_id=#openId#
+	</select>
+	<select id="getWePayCard" parameterClass="string" resultClass="hashmap">
+		SELECT card_code,pay_card_id,card_desc
+			FROM cns_pay_card 
+		WHERE use_yn = 'Y'
+			  AND #yyyymmdd# BETWEEN start_ymd AND end_ymd
+	</select>
+	<update id="updateOrderFHSign" parameterClass="string">
+		UPDATE cns_order 
+			SET order_status = 'FH'
+		WHERE order_id = #orderId#
+			AND order_status ='XD' 
+	</update>
+	<update id="updateOrderTDSign" parameterClass="map">
+		UPDATE cns_order 
+			SET order_status = 'TD'
+		WHERE order_id = #orderId# 
+			AND order_status ='XD' 
+			AND buyer_openid =#openId#
+	</update>
+	<select id="selectOrderInfoTop10" parameterClass="string" resultClass="hashmap">
+		SELECT order_id,order_create_time,order_status,order_total_price,buyer_nick,receiver_name,receiver_province,receiver_city,receiver_address,receiver_mobile,receiver_phone,product_name,product_price,product_count,receiver_zone
+			FROM cns_order
+		WHERE buyer_openid=#openId# 
+		ORDER BY order_create_time DESC
+		LIMIT 10
+	</select>
+	<select id="selectOrderInfoByOrderId" parameterClass="string" resultClass="hashmap">
+		SELECT order_id,order_total_price,buyer_nick,receiver_name,receiver_province,receiver_city,receiver_address,receiver_mobile,product_name,product_price,product_count,receiver_zone
+			FROM cns_order
+		WHERE order_id =#orderId#
+	</select>
+	<select id="getWish" resultClass="string">
+		SELECT wish FROM cns_wish LIMIT 1
+	</select>
+	<select id="getPhonesInOrders" parameterClass="string" resultClass="string">
+		SELECT DISTINCT receiver_mobile FROM cns_order 
+			WHERE buyer_openid=#openId#
+		ORDER BY reg_date DESC
+	</select>
+	<select id="countMsgMoreToday" parameterClass="map" resultClass="int">
+		SELECT
+			COUNT(mobile) AS cnt
+		FROM
+			cns_sns
+		WHERE
+			TO_DAYS(NOW()) = TO_DAYS(reg_date)
+		AND mobile = #mobile#
+		AND template = #template#
+	</select>
+	<insert id="storeSnsMsg" parameterClass="map">
+		INSERT INTO cns_sns 
+			(mobile, template)
+		VALUE
+			(#mobile#, #template#)
+	</insert>
+	<select id="getTotalPrice" parameterClass="string" resultClass="int">
+		SELECT
+			SUM(order_total_price) as totalPrice
+		FROM
+			cns_order
+		WHERE
+			buyer_openid = #openId# 
+		AND order_status ='XD'
+	</select>
+	<select id="isHurry" parameterClass="string" resultClass="int">
+		SELECT
+			COUNT(order_id) AS cnt
+		FROM
+			cns_order
+		WHERE
+			buyer_openid = #openId#
+		AND product_id = (
+			SELECT
+				product_id
+			FROM
+				cns_hurry
+			LIMIT 1
+		)
+		AND order_status ='XD')
+	</select>
+	<select id="selectUnorderInfo" parameterClass="string" resultClass="hashmap">
+	    SELECT order_id,order_create_time,order_status,order_total_price,buyer_nick,receiver_name,receiver_province,receiver_city,receiver_address,receiver_mobile,receiver_phone,product_name,product_price,product_count,receiver_zone
+			FROM cns_order
+		WHERE buyer_openid = #openId#
+		AND order_status IN ('XD','FH')
+	</select>
+	<delete id="emptyGroup">
+		TRUNCATE cns_group
+	</delete>
+	<insert id="sysncGroup" parameterClass="list">
+		INSERT INTO 
+			cns_group(group_id,group_name)
+		VALUES
+		<iterate conjunction=",">
+			(#groupList[].groupId#,#groupList[].groupName#)
+		</iterate>
+	</insert>
+	<delete id="emptyProducts">
+		TRUNCATE cns_product
+	</delete>
+	<insert id="sysncAllProducts" parameterClass="list">
+		INSERT INTO 
+			cns_product(product_id,group_id,product_name,product_price,product_ori_price,product_status)
+		VALUES
+		<iterate conjunction=",">
+			(#allProducts[].productId#,#allProducts[].groupId#,#allProducts[].productName#,#allProducts[].productPrice#,#allProducts[].productOriPrice#,#allProducts[].status#)
+		</iterate>
+	</insert>
+	<select id="getCatalog" resultClass="hashmap">
+		SELECT
+			cat.catalog_id AS catalogId,
+			cat.catalog_name AS catalogName,
+			grp.group_id AS groupId,
+			grp.group_name AS groupName,
+			ref.group_image AS groupImg
+		FROM
+			cns_catalog_group ref
+		INNER JOIN cns_catalog cat ON ref.catalog_id = cat.catalog_id
+		INNER JOIN cns_group grp ON grp.group_id = ref.group_id
+		WHERE cat.use_yn = 'Y'
+		ORDER BY
+			ref.catalog_id,
+			ref.group_order
+	</select>
+	<select id="getProductsByCatalog" parameterClass="map" resultClass="hashmap">
+	    SELECT 
+		    pro.product_id AS pId,
+		    pro.product_name AS pNm,
+		    pro.product_price AS pPrice,
+		    pro.product_ori_price AS pOriPrice,
+		    IFNULL(other.product_sales,0) AS pSales
+		FROM
+		    cns_product pro
+		INNER JOIN cns_catalog_group ref ON ref.group_id = pro.group_id
+		LEFT OUTER JOIN cns_product_other other ON other.product_id = pro.product_id
+		WHERE
+		    ref.catalog_id = #catalogId#
+		        AND pro.product_status = '1'
+		<isEqual property="sortOrd" compareValue="PRICE">
+		ORDER BY CAST(pPrice AS SIGNED)
+		</isEqual>
+		<isEqual property="sortOrd" compareValue="SALES">
+		ORDER BY CAST(pSales AS SIGNED) DESC
+		</isEqual>
+	</select>
+	<select id="getProductsByGroup" parameterClass="map" resultClass="hashmap">
+	    SELECT 
+		    pro.product_id AS pId,
+		    pro.product_name AS pNm,
+		    pro.product_price AS pPrice,
+		    pro.product_ori_price AS pOriPrice,
+		    IFNULL(other.product_sales,0) AS pSales
+		FROM
+		    cns_product pro
+		LEFT OUTER JOIN cns_product_other other ON other.product_id = pro.product_id
+		WHERE
+		    pro.group_id = #groupId#
+		        AND pro.product_status = '1'
+		<isEqual property="sortOrd" compareValue="PRICE">
+		ORDER BY CAST(pPrice AS SIGNED)
+		</isEqual>
+		<isEqual property="sortOrd" compareValue="SALES">
+		ORDER BY CAST(pSales AS SIGNED) DESC
+		</isEqual>
+	</select>
+	<delete id="emptyUserShopCart" parameterClass="string">
+	    DELETE FROM cns_usr_cart WHERE open_id= #openId#
+	</delete>
+	<insert id="insertUserShopCart" parameterClass="map">
+	    INSERT INTO cns_usr_cart (
+			open_id,
+			product_id,
+			product_count
+		)
+		VALUES
+		<iterate property="products" conjunction=",">
+			(#openId#, #products[].productId#, #products[].productCount#)
+		</iterate>
+	</insert>
+	<select id="getUserShopCart" parameterClass="string" resultClass="hashmap">
+	    SELECT
+			crt.product_id AS pId,
+			pro.product_name AS pNm,
+			pro.product_price AS pPrice,
+			pro.product_ori_price AS pOriPrice,
+			crt.product_count AS pCount
+		FROM
+			cns_usr_cart crt
+		INNER JOIN cns_product pro ON crt.product_id = pro.product_id
+		WHERE
+			crt.open_id = #openId#
+		AND pro.product_status = '1'
+	</select>
+	<select id="getShop" resultClass="hashmap">
+		SELECT
+			grp.group_id AS groupId,
+			grp.group_cols AS groupCols,
+			grp.group_func AS groupFunc,
+			grp.group_title AS groupTitle,
+			itm.item_id AS itemId,
+			itm.item_image AS itemImg,
+			itm.item_func AS itemFunc,
+			itm.item_title AS itemTitle
+		FROM
+			cns_shop_group grp
+		INNER JOIN cns_shop_item itm ON itm.group_id = grp.group_id
+		WHERE
+			grp.use_yn = 'Y'
+		ORDER BY
+			grp.group_id,
+			itm.item_order
+	</select>
+	<select id="getUserAddress" parameterClass="string" resultClass="hashmap">
+		SELECT
+			user_address AS uAddress,
+			user_name AS uName,
+			user_phone AS uPhone
+		FROM
+			cns_usr_address
+		WHERE
+			open_id = #openId#
+		ORDER BY
+			reg_date DESC
+		LIMIT 1
+	</select>
+	<insert id="insertUserAddress" parameterClass="map">
+		INSERT INTO cns_usr_address (
+			open_id,
+			user_address,
+			user_name,
+			user_phone
+		)
+		VALUE
+			(
+				#openId#,
+				#uAddress#,
+				#uName#,
+				#uPhone#
+			)
+	</insert>
+	<select id="getUserCoupons" parameterClass="map" resultClass="hashmap">
+		SELECT
+			card_id AS cId,
+			coupon_name AS cName,
+			minus_price AS cMinus
+		FROM
+			cns_coupon
+		WHERE
+			open_id = #openId#
+		AND use_yn = 'Y'
+		AND CAST(full_price AS SIGNED) &lt;= CAST(#totalPrice# AS SIGNED)
+		AND TO_DAYS(NOW()) &lt;= TO_DAYS(STR_TO_DATE(end_date, '%Y%m%d'))
+	</select>
+	<select id="getUserCouponsByCard" parameterClass="map" resultClass="hashmap">
+		SELECT
+			card_id AS cId,
+			coupon_name AS cName,
+			minus_price AS cMinus
+		FROM
+			cns_coupon
+		WHERE
+			open_id = #openId#
+		AND use_yn = 'Y'
+		AND card_id= #cardId#
+		AND CAST(full_price AS SIGNED) &lt;= CAST(#totalPrice# AS SIGNED)
+		AND TO_DAYS(NOW()) &lt;= TO_DAYS(STR_TO_DATE(end_date, '%Y%m%d'))
+	</select>
+	<select id="getUserDirectCoupons" parameterClass="map" resultClass="hashmap">
+		SELECT
+			card_id AS cId,
+			coupon_name AS cName,
+			minus_price AS cMinus
+		FROM
+			cns_coupon_direct
+		WHERE
+			open_id = #openId#
+		AND use_yn = 'Y'
+		AND CAST(full_price AS SIGNED) &lt;= CAST(#totalPrice# AS SIGNED)
+		AND TO_DAYS(NOW()) &lt;= TO_DAYS(STR_TO_DATE(end_date, '%Y%m%d'))
+	</select>
+	<select id="getActivityEvents" parameterClass="map" resultClass="hashmap">
+		SELECT
+			full_price AS eFullPrice,
+			event_html AS eHtml,
+			event_minus AS eMinus
+		FROM
+			cns_activity_events
+		WHERE
+			use_yn = 'Y'
+		AND #yyyymmdd# BETWEEN start_ymd
+		AND end_ymd
+		AND CAST(full_price AS SIGNED) &lt;= CAST(#totalPrice# AS SIGNED)
+		ORDER BY CAST(full_price AS SIGNED) DESC LIMIT 1
+	</select>
+	<select id="getPromotionEvents" parameterClass="map" resultClass="hashmap">
+		SELECT
+			full_price AS eFullPrice,
+			event_html AS eHtml,
+			event_minus AS eMinus
+		FROM
+			cns_activity_events
+		WHERE
+			use_yn = 'Y'
+		AND #yyyymmdd# BETWEEN start_ymd
+		AND end_ymd
+		AND CAST(full_price AS SIGNED) &gt; CAST(#totalPrice# AS SIGNED) 
+		ORDER BY CAST(full_price AS SIGNED) LIMIT 1
+	</select>
+	<select id="getProductDetailByIds" parameterClass="map" resultClass="hashmap">
+		SELECT
+			product_id AS productId,
+			product_name AS productName,
+			product_price AS productPrice,
+			product_status AS productStatus
+		FROM
+			cns_product
+		WHERE
+			product_id IN (
+				<iterate property="productIds" conjunction=",">
+					#productIds[]#
+				</iterate>
+			)
+		ORDER BY productPrice DESC
+	</select>
+	<select id="getAddressKeywords" resultClass="string">
+		SELECT
+			addr_keywords AS keywords
+		FROM
+			cns_address_keywords
+	</select>
+	<insert id="makePreOrder" parameterClass="list">
+		INSERT INTO cns_order_pre (
+			open_id,
+			out_trade_no,
+			total_fee,
+			usr_name,
+			usr_phone,
+			usr_address,
+			product_id,
+			product_name,
+			product_price,
+			product_count
+		)
+		VALUES
+			<iterate conjunction=",">
+				(
+					#detailList[].openId#,
+					#detailList[].outTradeNo#,
+					#detailList[].totalFee#,
+					#detailList[].uName#,
+					#detailList[].uPhone#,
+					#detailList[].uAddress#,
+					#detailList[].productId#,
+					#detailList[].productName#,
+					#detailList[].productPrice#,
+					#detailList[].productCount#
+				)
+			</iterate>
+	</insert>
+	<insert id="makeRealOrder" parameterClass="map">
+		INSERT IGNORE INTO cns_order_real (
+			open_id,
+			transaction_id,
+			out_trade_no,
+			total_fee,
+			cash_fee
+		)
+		VALUES
+		(
+			#openid#,
+			#transaction_id#,
+			#out_trade_no#,
+			#total_fee#,
+			#cash_fee#
+		)
+	</insert>
+	<select id="checkRealOrderExist" parameterClass="string" resultClass="int">
+		SELECT
+			COUNT(out_trade_no) AS cnt
+		FROM
+			cns_order_real
+		WHERE
+			out_trade_no = #out_trade_no#
+	</select>
+	<select id="getUsrOrders" parameterClass="map" resultClass="hashmap">
+	    SELECT
+			GROUP_CONCAT(
+				CONCAT(
+					p.product_count,
+					'x',
+					p.product_name,
+					'(',
+					p.product_price * 1.0 / 100,
+					')'
+				) SEPARATOR '\n'
+			) AS products,
+			r.open_id AS openId,
+			r.total_fee AS totalFee,
+			r.cash_fee AS cashFee,
+			p.usr_name AS uName,
+			p.usr_phone AS uPhone,
+			p.usr_address AS uAddress,
+			DATE_FORMAT(r.reg_date, '%Y-%m-%d %H:%i:%s') AS oTime,
+			DATE_FORMAT(r.reg_date, '%Y-%m-%d') AS oDate,
+			r.reg_date AS regDate
+		FROM
+			cns_order_real r
+		LEFT OUTER JOIN cns_order_pre p ON r.out_trade_no = p.out_trade_no
+		GROUP BY
+			p.out_trade_no
+		HAVING
+			r.open_id = #openId#
+			<isEqual property="timeKind" compareValue="TODAY">
+			    AND TO_DAYS(r.reg_date) = TO_DAYS(NOW())
+			</isEqual>
+			<isEqual property="timeKind" compareValue="HISTORY">
+			    AND TO_DAYS(r.reg_date) &lt; TO_DAYS(NOW())
+			</isEqual>
+		ORDER BY
+			r.reg_date DESC
+	</select>
+	<select id="getOrderDetailByOutTradeNo" parameterClass="map" resultClass="hashmap">
+	    SELECT
+			GROUP_CONCAT(
+				CONCAT(
+					p.product_count,
+					'x',
+					p.product_name,
+					'(',
+					p.product_price * 1.0 / 100,
+					')'
+				) SEPARATOR '\n'
+			) AS products,
+			p.open_id AS openId,
+			p.usr_name AS uName,
+			p.usr_phone AS uPhone,
+			p.usr_address AS uAddress,
+			DATE_FORMAT(
+				p.reg_date,
+				'%Y-%m-%d %H:%i:%s'
+			) AS oTime,
+			p.reg_date AS regDate
+		FROM
+			cns_order_pre p
+		GROUP BY
+			p.out_trade_no
+		HAVING
+			p.open_id = #openid#
+		AND p.out_trade_no = #out_trade_no#
+	</select>
+</sqlMap>

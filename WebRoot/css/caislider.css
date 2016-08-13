@@ -1,0 +1,9 @@
+.caiSlider{ max-width:53rem; margin:0 auto; position:relative; overflow:hidden;}  
+.caisli_con{ transition-duration:1s; -webkit-transition-duration:1s; overflow:hidden;}  
+.caisli_title{ position:absolute; bottom:0; z-index:2; width:100%; height:2rem; line-height:2rem; opacity:0.6; background:#000;}  
+.caisli_title h3{ margin-left:1rem; width:80%; color:#fff; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}  
+.caisli_con li{ float:left;}  
+.caisli_con li img{ display:block; width:100%;}  
+.caisli_num{ position:absolute; right:0.5rem; bottom:0; z-index:3; height:2rem; line-height:2rem;}  
+.caisli_num span{ display:inline-block; margin:0 2px; width:6px; height:6px; border-radius:50%; background:#ccc; vertical-align:middle; cursor:pointer;}  
+.caisli_num .num_on{ background:#fff; height:5px; width:5px;}  

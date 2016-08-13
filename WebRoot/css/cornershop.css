@@ -1,0 +1,44 @@
+.bfwhite:before{color: #FFFFFF;}
+.cnsAdd,.cnsMinus{width:20px;height:20px;vertical-align: middle;}
+.shopCartItemsImg{width:20%;}
+.shopCartItemsTitle{width:45%;}
+.shopCartItemsCount{width:25%;}
+.shopCartItemsInputCount{width:25%;text-align:center;}
+
+.catalogCells:before{border-top:0px solid white;}
+.catalogCells{margin:0 0 10px 0;}
+.catalogCells:after{border-bottom:0px solid white;}
+.groupTitle{text-align:center;}
+.catalogTitle{font-size:20px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.groupList{float: left;text-align:center;margin:1%;width:31%}
+.groupImg{width:30px;height:30px;}
+.groupName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:#ACACAC}
+
+.cataProPrice{font-size:17px;margin-right: 10px;color:red}
+.cataProOriPrice{margin-right: 10px;}
+.cataTab{position: initial;}
+.cataTab:after{border-bottom:0 solid white}
+
+.shopItemsCells:before{border-top:0px solid white;}
+.shopItemsCells{margin:0 0 10px 0;}
+.shopItemsCells:after{border-bottom:0px solid white;}
+.shopItemsTitle{text-align:center;}
+.shopItemTitle{font-size:20px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.shopItemsList1{float: left;text-align:center;margin:1%;width:98%}
+.shopItemsList2{float: left;text-align:center;margin:1%;width:48%}
+.shopItemsList3{float: left;text-align:center;margin:1%;width:31.3%}
+.shopItemsList4{float: left;text-align:center;margin:1%;width:23%}
+.shopItemName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:#ACACAC}
+.shopItemImg{width:100%;}
+.shopItemName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:#ACACAC}
+
+#toast i:before{color: #fff;font-size: 55px;}
+
+.orderRealP{font-size:14px;color:#ACACAC}
+.orderRealCell:before{border-top: 0px solid #d9d9d9;}
+.orderRealCell{padding-top: 0;padding-bottom: 0;}
+.orderRealCells:before{border-top: 0px solid #d9d9d9;}
+.orderRealCells:after{border-bottom: 0px solid #d9d9d9;}
+.orderRealTitle{font-size: 16px;}
+.orderRealFontRight{float: right;}
+.orderRealDateTitle{color: #000;font-size: 17px;}
